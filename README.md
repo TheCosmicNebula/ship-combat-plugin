@@ -2,6 +2,8 @@
 
 A RuneLite plugin designed to help with ship combat. This plugin provides visual overlays that account for the unique "Boat Plane" mechanics, including non-rigid tile rotations and sub-tile distance checking.
 
+Now works with Sloops, including Sloops with multiple cannons. Improved performance for Daisy turning radius, and overlap colors for Sloops with multiple cannons on the same side. All configurable.
+
 ## Features
 
 *   **Cannon Firing Arc:** Displays a dynamic 180° firing zone anchored to your cannon facilities, showing exactly which tiles are within range of your cannon.
@@ -15,6 +17,8 @@ A RuneLite plugin designed to help with ship combat. This plugin provides visual
 
 ## Screenshots
 
-![Ship Combat Tactical View](screenshots/ShipCombat.png)
+![Ship Combat Tactical View](screenshots/one.png)
 
-![Ship Combat Threat Detection](screenshots/ShipCombat-more.png)
+![Ship Combat Threat Detection](screenshots/two.png)
+
+![Ship Combat Threat Detection](screenshots/three.png)
