@@ -22,3 +22,7 @@ Now works with Sloops, including Sloops with multiple cannons. Improved performa
 ![Ship Combat Threat Detection](screenshots/two.png)
 
 ![Ship Combat Threat Detection](screenshots/three.png)
+
+![Ship Combat Threat Detection](screenshots/four.png)
+
+![Ship Combat Threat Detection](screenshots/five.png)
