@@ -59,10 +59,28 @@ public class ShipCombatOverlay extends Overlay
         if (we != null)
         {
             if (config.showShipTiles()) renderShipTiles(graphics, we);
+<<<<<<< Updated upstream
             if (config.showCannonRange() && !plugin.getTrackedCannons().isEmpty()
                     && (!config.onlyShowArcWhenManning() || plugin.isPlayerAtCannon()))
             {
                 for (GameObject cannon : plugin.getTrackedCannons()) renderCannonArc(graphics, cannon);
+=======
+            if (config.showCannonRange())
+            {
+                if (config.onlyShowArcWhenManning())
+                {
+                    GameObject playerCannon = plugin.getPlayerCannon();
+
+                    if (plugin.isPlayerAtCannon() && playerCannon != null)
+                    {
+                        renderCannonArcs(graphics, java.util.Collections.singletonList(playerCannon));
+                    }
+                }
+                else
+                {
+                    renderCannonArcs(graphics, plugin.getTrackedCannons());
+                }
+>>>>>>> Stashed changes
             }
             if (config.showCannonTick() && plugin.getCannonTicksRemaining() > 0) renderCannonTickOverhead(graphics, local);
         }
@@ -125,6 +143,78 @@ public class ShipCombatOverlay extends Overlay
                 }
             }
         }
+<<<<<<< Updated upstream
+=======
+
+        /*
+         * PASS 2:
+         * Render each physical tile exactly once.
+         */
+        for (CannonArcTile tile : tiles.values())
+        {
+            int cannonCount = Integer.bitCount(tile.cannonMask);
+
+            Color lineColor;
+            Color fillColor;
+
+            if (cannonCount > 1)
+            {
+                // Covered by multiple cannons
+                lineColor = config.cannonOverlapColor();
+                fillColor = withAlpha(lineColor, config.cannonOverlapColor().getAlpha());
+            }
+            else if ((tile.cannonMask & 1) != 0)
+            {
+                // Cannon 1 only
+                lineColor = config.cannonOneColor();
+                fillColor = withAlpha(lineColor, config.cannonOneColor().getAlpha());
+            }
+            else
+            {
+                // Cannon 2 only
+                lineColor = config.cannonTwoColor();
+                fillColor = withAlpha(lineColor, config.cannonTwoColor().getAlpha());
+            }
+
+            renderCannonArcTile(graphics, tile.center, tile.worldView, lineColor, fillColor);
+        }
+    }
+
+    private void renderCannonArcTile(Graphics2D graphics, LocalPoint center, net.runelite.api.WorldView worldView, Color lineColor, Color fillColor)
+    {
+        int halfTile = 64;
+
+        float[] xs =
+                {
+                        -halfTile,
+                        halfTile,
+                        halfTile,
+                        -halfTile
+                };
+
+        float[] ys =
+                {
+                        -halfTile,
+                        -halfTile,
+                        halfTile,
+                        halfTile
+                };
+
+        Polygon poly = modelToCanvasPoly(center, 0, xs, ys, worldView
+        );
+
+        if (poly == null)
+        {
+            return;
+        }
+
+        graphics.setColor(fillColor);
+        graphics.fillPolygon(poly);
+
+        graphics.setStroke(STROKE_THIN);
+        graphics.setColor(lineColor);
+        graphics.drawPolygon(poly);
+>>>>>>> Stashed changes
     }
 
     private int getThreatLevel(WorldEntity boat, NPC npc, int attackRange)
@@ -225,7 +315,7 @@ public class ShipCombatOverlay extends Overlay
         graphics.setFont(FONT_TICK);
         Point pt = local.getCanvasTextLocation(graphics, text, local.getLogicalHeight() + TEXT_Z_OFFSET);
         if (pt == null) return;
-        OverlayUtil.renderTextLocation(graphics, new Point(pt.getX() + 1, pt.getY() + 1), text, Color.BLACK);
+        OverlayUtil.renderTextLocation(graphics, new Point(pt.getX() + 1, pt.getY() + 1), text, config.cannonCooldownLightMode() ? Color.WHITE : Color.BLACK);
         OverlayUtil.renderTextLocation(graphics, pt, text, config.cannonCooldownColor());
     }
 

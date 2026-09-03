@@ -30,13 +30,19 @@ public interface ShipCombatConfig extends Config
             section = sectionCannon, position = 0)
     default boolean showCannonRange() { return true; }
 
+    @ConfigItem(keyName = "onlyShowArcWhenManning", name = "Only show arc when manning",
+            description = "Hide the firing arc unless you are standing at the cannon facility.",
+            section = sectionCannon, position = 1)
+    default boolean onlyShowArcWhenManning() { return false; }
+
     @Range(min = 1, max = 30)
     @ConfigItem(keyName = "cannonRangeTiles", name = "Cannon range (tiles)",
             description = "The horizontal distance your cannonballs travel. 13 tiles is recommended for most tier cannons.",
-            section = sectionCannon, position = 1)
+            section = sectionCannon, position = 2)
     default int cannonRangeTiles() { return 13; }
 
     @Alpha
+<<<<<<< Updated upstream
     @ConfigItem(keyName = "cannonRangeFillColor", name = "Arc fill color",
             description = "Color of the interior of the firing arc.",
             section = sectionCannon, position = 2)
@@ -52,19 +58,50 @@ public interface ShipCombatConfig extends Config
             description = "Hide the firing arc unless you are standing at the cannon facility.",
             section = sectionCannon, position = 4)
     default boolean onlyShowArcWhenManning() { return false; }
+=======
+    @ConfigItem(keyName = "cannonOneColor", name = "Cannon one color",
+            description = "Color used for tiles covered only by cannon one.",
+            section = sectionCannon, position = 3)
+    default Color cannonOneColor() {  return new Color(0, 255, 25, 40); }
+
+    @Alpha
+    @ConfigItem(keyName = "cannonTwoColor", name = "Cannon two color",
+            description = "Color used for tiles covered only by cannon two.",
+            section = sectionCannon, position = 4)
+    default Color cannonTwoColor() { return new Color(255, 140, 0, 40); }
+
+    @Alpha
+    @ConfigItem(keyName = "cannonOverlapColor", name = "Cannon overlap color",
+            description = "Color used where multiple cannon firing arcs overlap.",
+            section = sectionCannon, position = 5)
+    default Color cannonOverlapColor() { return new Color(255, 0, 0, 40); }
+>>>>>>> Stashed changes
 
     // ---- Cannon tick counter --------------------------------------------
 
     @ConfigItem(keyName = "showCannonTick", name = "Show cannon tick counter",
             description = "Show the number of ticks remaining until the cannon can fire again, above your character.",
+<<<<<<< Updated upstream
             section = sectionCannon, position = 5)
+=======
+            section = sectionCannon, position = 6)
+>>>>>>> Stashed changes
     default boolean showCannonTick() { return true; }
 
     @Alpha
     @ConfigItem(keyName = "cannonCooldownColor", name = "Tick counter color",
             description = "Color of the cooldown text shown above your character.",
+<<<<<<< Updated upstream
             section = sectionCannon, position = 6)
+=======
+            section = sectionCannon, position = 7)
+>>>>>>> Stashed changes
     default Color cannonCooldownColor() { return new Color(255, 80, 0); }
+
+    @ConfigItem(keyName = "cannonCooldownLightMode", name = "Tick counter light mode",
+            description = "Changes the backing color for the tick cooldown to white to aid with visibility.",
+            section = sectionCannon, position = 8)
+    default boolean cannonCooldownLightMode() { return true; }
 
     // ---- Ship highlights --------------------------------------------
 

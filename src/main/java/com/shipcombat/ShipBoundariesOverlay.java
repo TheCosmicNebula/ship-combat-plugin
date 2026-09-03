@@ -17,9 +17,37 @@ import net.runelite.client.ui.overlay.OverlayPosition;
 
 public class ShipBoundariesOverlay extends Overlay
 {
+<<<<<<< Updated upstream
     @Inject private Client client;
     @Inject private ShipCombatPlugin plugin;
     @Inject private ShipCombatConfig config;
+=======
+    private static final int SWEEP_STEPS = 16;
+    private static final int FULL_ROTATION = 2048;
+    private static final int ANGLE_STEP = FULL_ROTATION / SWEEP_STEPS;
+
+    private static final BasicStroke SWEEP_STROKE = new BasicStroke(1.5f);
+
+    @Inject
+    private Client client;
+
+    @Inject
+    private ShipCombatPlugin plugin;
+
+    @Inject
+    private ShipCombatConfig config;
+
+    /*
+     * Reusable arrays.
+     * Avoid allocating these every frame/rotation.
+     */
+    private final float[] modelXs = new float[4];
+    private final float[] modelYs = new float[4];
+    private final float[] modelZs = {0, 0, 0, 0};
+
+    private final int[] canvasXs = new int[4];
+    private final int[] canvasYs = new int[4];
+>>>>>>> Stashed changes
 
     @Inject
     public ShipBoundariesOverlay()
@@ -41,7 +69,11 @@ public class ShipBoundariesOverlay extends Overlay
         return null;
     }
 
+<<<<<<< Updated upstream
     private void renderMergedDaisy(Graphics2D graphics, WorldEntity we)
+=======
+    private void renderMergedDaisy(Graphics2D graphics,WorldEntity we)
+>>>>>>> Stashed changes
     {
         LocalPoint centerLp = we.getTargetLocation();
         if (centerLp == null) return;
@@ -50,8 +82,27 @@ public class ShipBoundariesOverlay extends Overlay
         int tileSize = Perspective.LOCAL_TILE_SIZE;
         int halfTile = tileSize / 2;
 
+<<<<<<< Updated upstream
         int tilesWide = wec.getBoundsWidth() / tileSize;
         int tilesLong = wec.getBoundsHeight() / tileSize;
+=======
+        /*
+         * Instead of rendering every individual hull tile, represent the entire ship as one rectangle.
+         * The old tile renderer ultimately covered exactly these same bounds.
+         */
+        float halfWidth = wec.getBoundsWidth() / 2.0f;
+        float halfHeight = wec.getBoundsHeight() / 2.0f;
+
+        modelXs[0] = -halfWidth;
+        modelXs[1] = halfWidth;
+        modelXs[2] = halfWidth;
+        modelXs[3] = -halfWidth;
+
+        modelYs[0] = -halfHeight;
+        modelYs[1] = -halfHeight;
+        modelYs[2] = halfHeight;
+        modelYs[3] = halfHeight;
+>>>>>>> Stashed changes
 
         Area combinedArea = new Area();
 
@@ -59,7 +110,13 @@ public class ShipBoundariesOverlay extends Overlay
         {
             int loopAngle = step * 128;
 
+<<<<<<< Updated upstream
             for (int x = 0; x < tilesWide; x++)
+=======
+            Perspective.modelToCanvas(client, client.getTopLevelWorldView(), 4, centerLp.getX(), centerLp.getY(), 0, loopAngle, modelXs, modelYs, modelZs, canvasXs, canvasYs);
+
+            if (!hasVisiblePoint())
+>>>>>>> Stashed changes
             {
                 for (int y = 0; y < tilesLong; y++)
                 {
@@ -67,6 +124,7 @@ public class ShipBoundariesOverlay extends Overlay
                     int modelX = (x * tileSize) - (wec.getBoundsWidth() / 2) + halfTile;
                     int modelY = (y * tileSize) - (wec.getBoundsHeight() / 2) + halfTile;
 
+<<<<<<< Updated upstream
                     float[] xs = {modelX - halfTile, modelX + halfTile, modelX + halfTile, modelX - halfTile};
                     float[] ys = {modelY - halfTile, modelY - halfTile, modelY + halfTile, modelY + halfTile};
                     float[] zs = {0, 0, 0, 0};
@@ -74,6 +132,11 @@ public class ShipBoundariesOverlay extends Overlay
                     int[] cxs = new int[4], cys = new int[4];
                     Perspective.modelToCanvas(client, client.getTopLevelWorldView(), 4,
                             centerLp.getX(), centerLp.getY(), 0, loopAngle, xs, ys, zs, cxs, cys);
+=======
+            Polygon hull = new Polygon(canvasXs, canvasYs, 4);
+            combinedArea.add(new Area(hull));
+        }
+>>>>>>> Stashed changes
 
                     if (cxs[0] != 0 || cys[0] != 0)
                     {

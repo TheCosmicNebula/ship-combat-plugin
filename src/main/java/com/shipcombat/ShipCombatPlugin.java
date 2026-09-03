@@ -263,6 +263,58 @@ public class ShipCombatPlugin extends Plugin
             int speed = activeCannonType != null ? activeCannonType.getAttackSpeedTicks() : 7;
             cannonTicksRemaining = speed + 1;
         }
+<<<<<<< Updated upstream
+=======
+
+        GameObject localPlayerCannon = getCurrentPlayerCannon();
+
+        if (localPlayerCannon == null)
+        {
+            return;
+        }
+
+        if (gfx.getWorldView() != localPlayerCannon.getWorldView())
+        {
+            return;
+        }
+
+        LocalPoint gfxLocation = gfx.getLocation();
+        LocalPoint playerCannonLocation = localPlayerCannon.getLocalLocation();
+
+        long playerDx = gfxLocation.getX() - playerCannonLocation.getX();
+        long playerDy = gfxLocation.getY() - playerCannonLocation.getY();
+        long playerDistanceSquared = playerDx * playerDx + playerDy * playerDy;
+
+        for (GameObject cannon : getTrackedCannons())
+        {
+            if (cannon == localPlayerCannon)
+            {
+                continue;
+            }
+
+            if (cannon.getWorldView() != gfx.getWorldView())
+            {
+                continue;
+            }
+
+            LocalPoint cannonLocation = cannon.getLocalLocation();
+
+            long dx = gfxLocation.getX() - cannonLocation.getX();
+            long dy = gfxLocation.getY() - cannonLocation.getY();
+            long distanceSquared = dx * dx + dy * dy;
+
+            if (distanceSquared <= playerDistanceSquared)
+            {
+                return;
+            }
+        }
+
+        // The player's cannon is the closest cannon to the muzzle flash.
+        CannonType cannonType = CannonType.fromObjectId(localPlayerCannon.getId());
+        int speed = cannonType != null ? cannonType.getAttackSpeedTicks() : 7;
+
+        cannonTicksRemaining = speed + 1;
+>>>>>>> Stashed changes
     }
 
     @Subscribe
@@ -300,6 +352,65 @@ public class ShipCombatPlugin extends Plugin
 
     @Subscribe
     @SuppressWarnings("unused")
+<<<<<<< Updated upstream
+=======
+    public void onMenuOptionClicked(MenuOptionClicked event)
+    {
+        String option = event.getMenuOption();
+
+        boolean cannonOperate = "Operate".equalsIgnoreCase(option) || "Stop-operating".equalsIgnoreCase(option) || "Stop operating".equalsIgnoreCase(option);
+
+        if (!cannonOperate)
+        {
+            if (pendingCannonOperate && !playerAtCannon)
+            {
+                pendingCannonOperate = false;
+            }
+
+            return;
+        }
+
+        if (!CannonType.isCannonObject(event.getId()))
+        {
+            return;
+        }
+
+        /*
+         * If we're already manning a cannon, clicking the cannon again
+         * means we're stopping operation.
+         *
+         * This must happen BEFORE the "start operating" code below,
+         * otherwise the second click just sets the state true again.
+         */
+        if (playerAtCannon)
+        {
+            clearPlayerCannonState();
+            return;
+        }
+
+        /*
+         * We are not currently manning one, so this is a request
+         * to start operating a cannon.
+         */
+        pendingCannonOperate = true;
+
+        /*
+         * If already standing in the correct cannon position, activate
+         * immediately rather than waiting for the next game tick.
+         */
+        GameObject cannon = getCurrentPlayerCannon();
+
+        if (cannon != null)
+        {
+            playerAtCannon = true;
+            playerCannon = cannon;
+            pendingCannonOperate = false;
+        }
+    }
+
+    @Subscribe
+    @SuppressWarnings("unused")
+>>>>>>> Stashed changes
     public void onGameTick(GameTick ignored)
     {
         if (cannonTicksRemaining > 0)
