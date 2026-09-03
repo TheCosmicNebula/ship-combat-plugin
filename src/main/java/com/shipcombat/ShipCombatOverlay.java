@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import javax.inject.Inject;
 
+import com.google.common.base.Strings;
 import net.runelite.api.*;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldArea;
@@ -20,6 +21,7 @@ import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.OverlayUtil;
+import net.runelite.client.util.ColorUtil;
 
 public class ShipCombatOverlay extends Overlay
 {
@@ -55,7 +57,6 @@ public class ShipCombatOverlay extends Overlay
         if (we != null)
         {
             if (config.showShipTiles()) renderShipTiles(graphics, we);
-
             if (config.showCannonRange())
             {
                 if (config.onlyShowArcWhenManning())
@@ -64,8 +65,7 @@ public class ShipCombatOverlay extends Overlay
 
                     if (plugin.isPlayerAtCannon() && playerCannon != null)
                     {
-                        renderCannonArcs(graphics, java.util.Collections.singletonList(playerCannon)
-                        );
+                        renderCannonArcs(graphics, java.util.Collections.singletonList(playerCannon));
                     }
                 }
                 else
@@ -225,35 +225,26 @@ public class ShipCombatOverlay extends Overlay
             {
                 // Covered by multiple cannons
                 lineColor = config.cannonOverlapColor();
-                fillColor = withAlpha( lineColor, config.cannonOverlapColor().getAlpha()
-                );
+                fillColor = withAlpha(lineColor, config.cannonOverlapColor().getAlpha());
             }
             else if ((tile.cannonMask & 1) != 0)
             {
                 // Cannon 1 only
                 lineColor = config.cannonOneColor();
-                fillColor = withAlpha(lineColor, config.cannonOneColor().getAlpha()
-                );
+                fillColor = withAlpha(lineColor, config.cannonOneColor().getAlpha());
             }
             else
             {
                 // Cannon 2 only
                 lineColor = config.cannonTwoColor();
-                fillColor = withAlpha(lineColor, config.cannonTwoColor().getAlpha()
-                );
+                fillColor = withAlpha(lineColor, config.cannonTwoColor().getAlpha());
             }
 
-            renderCannonArcTile(graphics, tile.center, tile.worldView, lineColor, fillColor
-            );
+            renderCannonArcTile(graphics, tile.center, tile.worldView, lineColor, fillColor);
         }
     }
 
-    private void renderCannonArcTile(
-            Graphics2D graphics,
-            LocalPoint center,
-            net.runelite.api.WorldView worldView,
-            Color lineColor,
-            Color fillColor)
+    private void renderCannonArcTile(Graphics2D graphics, LocalPoint center, net.runelite.api.WorldView worldView, Color lineColor, Color fillColor)
     {
         int halfTile = 64;
 
@@ -273,12 +264,7 @@ public class ShipCombatOverlay extends Overlay
                         halfTile
                 };
 
-        Polygon poly = modelToCanvasPoly(
-                center,
-                0,
-                xs,
-                ys,
-                worldView
+        Polygon poly = modelToCanvasPoly(center, 0, xs, ys, worldView
         );
 
         if (poly == null)
@@ -392,8 +378,30 @@ public class ShipCombatOverlay extends Overlay
         graphics.setFont(FONT_TICK);
         Point pt = local.getCanvasTextLocation(graphics, text, local.getLogicalHeight() + TEXT_Z_OFFSET);
         if (pt == null) return;
-        OverlayUtil.renderTextLocation(graphics, new Point(pt.getX() + 1, pt.getY() + 1), text, Color.BLACK);
-        OverlayUtil.renderTextLocation(graphics, pt, text, config.cannonCooldownColor());
+
+        Color color = config.cannonCooldownLightMode() ? Color.WHITE : Color.BLACK;
+
+        renderTextLocation(graphics, new Point(pt.getX() + 1, pt.getY() + 1), text, color, color);
+        renderTextLocation(graphics, pt, text, config.cannonCooldownColor(), color);
+    }
+
+    public static void renderTextLocation(Graphics2D graphics, Point txtLoc, String text, Color color, Color backingColor)
+    {
+        if (Strings.isNullOrEmpty(text))
+        {
+            return;
+        }
+
+        int x = txtLoc.getX();
+        int y = txtLoc.getY();
+
+        if (color != backingColor) {
+            graphics.setColor(backingColor);
+            graphics.drawString(text, x + 1, y + 1);
+        }
+
+        graphics.setColor(ColorUtil.colorWithAlpha(color, 0xFF));
+        graphics.drawString(text, x, y);
     }
 
     private void renderMonsterRangeBoundary(Graphics2D graphics, WorldArea area, int range, Color color) {

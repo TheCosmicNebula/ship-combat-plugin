@@ -8,10 +8,7 @@ public final class CannonArcTile
     final net.runelite.api.WorldView worldView;
     int cannonMask;
 
-    CannonArcTile(
-            LocalPoint center,
-            net.runelite.api.WorldView worldView,
-            int cannonMask)
+    CannonArcTile(LocalPoint center, net.runelite.api.WorldView worldView, int cannonMask)
     {
         this.center = center;
         this.worldView = worldView;

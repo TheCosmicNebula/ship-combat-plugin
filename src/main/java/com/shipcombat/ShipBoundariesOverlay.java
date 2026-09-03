@@ -21,8 +21,7 @@ public class ShipBoundariesOverlay extends Overlay
     private static final int FULL_ROTATION = 2048;
     private static final int ANGLE_STEP = FULL_ROTATION / SWEEP_STEPS;
 
-    private static final BasicStroke SWEEP_STROKE =
-            new BasicStroke(1.5f);
+    private static final BasicStroke SWEEP_STROKE = new BasicStroke(1.5f);
 
     @Inject
     private Client client;
@@ -35,7 +34,6 @@ public class ShipBoundariesOverlay extends Overlay
 
     /*
      * Reusable arrays.
-     *
      * Avoid allocating these every frame/rotation.
      */
     private final float[] modelXs = new float[4];
@@ -73,9 +71,7 @@ public class ShipBoundariesOverlay extends Overlay
         return null;
     }
 
-    private void renderMergedDaisy(
-            Graphics2D graphics,
-            WorldEntity we)
+    private void renderMergedDaisy(Graphics2D graphics,WorldEntity we)
     {
         LocalPoint centerLp = we.getTargetLocation();
 
@@ -87,11 +83,8 @@ public class ShipBoundariesOverlay extends Overlay
         WorldEntityConfig wec = we.getConfig();
 
         /*
-         * Instead of rendering every individual hull tile,
-         * represent the entire ship as one rectangle.
-         *
-         * The old tile renderer ultimately covered exactly
-         * these same bounds.
+         * Instead of rendering every individual hull tile, represent the entire ship as one rectangle.
+         * The old tile renderer ultimately covered exactly these same bounds.
          */
         float halfWidth = wec.getBoundsWidth() / 2.0f;
         float halfHeight = wec.getBoundsHeight() / 2.0f;
@@ -121,33 +114,14 @@ public class ShipBoundariesOverlay extends Overlay
         {
             int loopAngle = step * ANGLE_STEP;
 
-            Perspective.modelToCanvas(
-                    client,
-                    client.getTopLevelWorldView(),
-                    4,
-                    centerLp.getX(),
-                    centerLp.getY(),
-                    0,
-                    loopAngle,
-                    modelXs,
-                    modelYs,
-                    modelZs,
-                    canvasXs,
-                    canvasYs
-            );
+            Perspective.modelToCanvas(client, client.getTopLevelWorldView(), 4, centerLp.getX(), centerLp.getY(), 0, loopAngle, modelXs, modelYs, modelZs, canvasXs, canvasYs);
 
             if (!hasVisiblePoint())
             {
                 continue;
             }
 
-            Polygon hull =
-                    new Polygon(
-                            canvasXs,
-                            canvasYs,
-                            4
-                    );
-
+            Polygon hull = new Polygon(canvasXs, canvasYs, 4);
             combinedArea.add(new Area(hull));
         }
 

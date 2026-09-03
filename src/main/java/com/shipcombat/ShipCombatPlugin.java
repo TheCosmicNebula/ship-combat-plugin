@@ -285,7 +285,6 @@ public class ShipCombatPlugin extends Plugin
             return;
         }
 
-        // Determine which cannon the local player is currently operating
         GameObject localPlayerCannon = getCurrentPlayerCannon();
 
         if (localPlayerCannon == null)
@@ -293,7 +292,6 @@ public class ShipCombatPlugin extends Plugin
             return;
         }
 
-        // Ignore graphics objects from another WorldView
         if (gfx.getWorldView() != localPlayerCannon.getWorldView())
         {
             return;
@@ -306,12 +304,6 @@ public class ShipCombatPlugin extends Plugin
         long playerDy = gfxLocation.getY() - playerCannonLocation.getY();
         long playerDistanceSquared = playerDx * playerDx + playerDy * playerDy;
 
-        /*
-         * Find out whether another cannon is closer to this muzzle flash.
-         *
-         * If another cannon is closer (or equally close), assume that cannon
-         * produced the graphics object and do NOT reset our timer.
-         */
         for (GameObject cannon : getTrackedCannons())
         {
             if (cannon == localPlayerCannon)
@@ -332,7 +324,6 @@ public class ShipCombatPlugin extends Plugin
 
             if (distanceSquared <= playerDistanceSquared)
             {
-                // This muzzle flash belongs to another cannon
                 return;
             }
         }
@@ -364,8 +355,7 @@ public class ShipCombatPlugin extends Plugin
 
             if (animId != -1 && tracked.getType().isAttackAnimation(animId))
             {
-                tracked.setTicksUntilNextAttack(tracked.getType().getAttackSpeedTicks() + 1
-                );
+                tracked.setTicksUntilNextAttack(tracked.getType().getAttackSpeedTicks() + 1);
             }
         }
     }
@@ -380,10 +370,6 @@ public class ShipCombatPlugin extends Plugin
 
         if (!cannonOperate)
         {
-            /*
-             * If we're still travelling to a cannon after clicking Operate
-             * and perform another action instead, cancel the pending state.
-             */
             if (pendingCannonOperate && !playerAtCannon)
             {
                 pendingCannonOperate = false;
@@ -392,9 +378,6 @@ public class ShipCombatPlugin extends Plugin
             return;
         }
 
-        /*
-         * Only react if this menu action targeted one of our cannon objects.
-         */
         if (!CannonType.isCannonObject(event.getId()))
         {
             return;
@@ -475,9 +458,7 @@ public class ShipCombatPlugin extends Plugin
         {
             if (tracked.getTicksUntilNextAttack() > 0)
             {
-                tracked.setTicksUntilNextAttack(
-                        tracked.getTicksUntilNextAttack() - 1
-                );
+                tracked.setTicksUntilNextAttack(tracked.getTicksUntilNextAttack() - 1);
             }
         }
 
