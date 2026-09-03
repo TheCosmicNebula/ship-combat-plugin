@@ -10,26 +10,9 @@ import java.util.Set;
 import javax.inject.Inject;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.Actor;
-import net.runelite.api.Client;
-import net.runelite.api.GameObject;
-import net.runelite.api.GameState;
-import net.runelite.api.GraphicsObject;
-import net.runelite.api.NPC;
-import net.runelite.api.Player;
-import net.runelite.api.WorldEntity;
-import net.runelite.api.WorldView;
+import net.runelite.api.*;
 import net.runelite.api.coords.LocalPoint;
-import net.runelite.api.events.AnimationChanged;
-import net.runelite.api.events.GameObjectDespawned;
-import net.runelite.api.events.GameObjectSpawned;
-import net.runelite.api.events.GameStateChanged;
-import net.runelite.api.events.GameTick;
-import net.runelite.api.events.GraphicsObjectCreated;
-import net.runelite.api.events.NpcDespawned;
-import net.runelite.api.events.NpcSpawned;
-import net.runelite.api.events.WorldEntityDespawned;
-import net.runelite.api.events.WorldEntitySpawned;
+import net.runelite.api.events.*;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
@@ -44,7 +27,8 @@ import net.runelite.client.ui.overlay.OverlayManager;
 )
 public class ShipCombatPlugin extends Plugin
 {
-    static final int BOAT_WORLD_ENTITY_CONFIG_ID = 2;
+    static final int BOAT_WORLD_ENTITY_CONFIG_ID_SKIFF = 2;
+    static final int BOAT_WORLD_ENTITY_CONFIG_ID_SLOOP = 3;
     private static final int CANNON_FIRE_GRAPHICS_ID = 3538;
     private static final int CANNON_ANIM_OPERATING = 13323;
     private static final int CANNON_ANIM_READY     = 13324;
@@ -72,6 +56,11 @@ public class ShipCombatPlugin extends Plugin
 
     @Getter
     private boolean playerAtCannon = false;
+
+    @Getter
+    private GameObject playerCannon = null;
+
+    private boolean pendingCannonOperate = false;
 
     // -----------------------------------------------------------------------
     // Entry Point
@@ -113,6 +102,7 @@ public class ShipCombatPlugin extends Plugin
         trackedCorpses.clear();
         cannonTicksRemaining = 0;
         playerAtCannon = false;
+        playerCannon = null;
     }
 
     // -----------------------------------------------------------------------
@@ -149,14 +139,52 @@ public class ShipCombatPlugin extends Plugin
         return active;
     }
 
+    private GameObject getCurrentPlayerCannon()
+    {
+        Player local = client.getLocalPlayer();
+        if (local == null)
+        {
+            return null;
+        }
+
+        LocalPoint playerLp = local.getLocalLocation();
+
+        for (GameObject cannon : getTrackedCannons())
+        {
+            LocalPoint cannonLp = cannon.getLocalLocation();
+
+            int dx = playerLp.getSceneX() - cannonLp.getSceneX();
+            int dy = playerLp.getSceneY() - cannonLp.getSceneY();
+
+            boolean cardinallyAdjacent = (Math.abs(dx) == 1 && dy == 0) || (dx == 0 && Math.abs(dy) == 1);
+
+            if (cardinallyAdjacent)
+            {
+                return cannon;
+            }
+        }
+
+        return null;
+    }
+
     public CannonType getActiveCannonType()
     {
-        List<GameObject> cannons = getTrackedCannons();
-        if (!cannons.isEmpty())
+        GameObject cannon = getCurrentPlayerCannon();
+
+        if (cannon != null)
         {
-            return CannonType.fromObjectId(cannons.get(0).getId());
+            return CannonType.fromObjectId(cannon.getId());
         }
+
         return null;
+    }
+
+    private void clearPlayerCannonState()
+    {
+        playerAtCannon = false;
+        playerCannon = null;
+        pendingCannonOperate = false;
+        cannonTicksRemaining = 0;
     }
 
     // -----------------------------------------------------------------------
@@ -178,7 +206,7 @@ public class ShipCombatPlugin extends Plugin
     public void onWorldEntitySpawned(WorldEntitySpawned event)
     {
         WorldEntity we = event.getWorldEntity();
-        if (we.getConfig().getId() == BOAT_WORLD_ENTITY_CONFIG_ID)
+        if (we.getConfig().getId() == BOAT_WORLD_ENTITY_CONFIG_ID_SKIFF || we.getConfig().getId() == BOAT_WORLD_ENTITY_CONFIG_ID_SLOOP)
         {
             activeBoats.add(we);
         }
@@ -245,26 +273,17 @@ public class ShipCombatPlugin extends Plugin
     public void onGraphicsObjectCreated(GraphicsObjectCreated event)
     {
         GraphicsObject gfx = event.getGraphicsObject();
-        if (gfx.getId() != CANNON_FIRE_GRAPHICS_ID) return;
+
+        if (gfx.getId() != CANNON_FIRE_GRAPHICS_ID)
+        {
+            return;
+        }
 
         Player local = client.getLocalPlayer();
-        if (local == null || getBoatWorldEntity() == null) return;
-
-        LocalPoint playerLocal = local.getLocalLocation();
-        LocalPoint gfxLocal = gfx.getLocation();
-
-        int dx = gfxLocal.getX() - playerLocal.getX();
-        int dy = gfxLocal.getY() - playerLocal.getY();
-        int distTiles = (int) Math.sqrt(dx * dx + dy * dy) / 128;
-
-        if (distTiles <= 6)
+        if (local == null || getBoatWorldEntity() == null)
         {
-            CannonType activeCannonType = getActiveCannonType();
-            int speed = activeCannonType != null ? activeCannonType.getAttackSpeedTicks() : 7;
-            cannonTicksRemaining = speed + 1;
+            return;
         }
-<<<<<<< Updated upstream
-=======
 
         GameObject localPlayerCannon = getCurrentPlayerCannon();
 
@@ -314,7 +333,6 @@ public class ShipCombatPlugin extends Plugin
         int speed = cannonType != null ? cannonType.getAttackSpeedTicks() : 7;
 
         cannonTicksRemaining = speed + 1;
->>>>>>> Stashed changes
     }
 
     @Subscribe
@@ -323,26 +341,18 @@ public class ShipCombatPlugin extends Plugin
     {
         Actor actor = event.getActor();
 
-        if (actor instanceof Player && actor == client.getLocalPlayer())
-        {
-            int anim = actor.getAnimation();
-            boolean wasAtCannon = playerAtCannon;
-            playerAtCannon = (anim == CANNON_ANIM_OPERATING || anim == CANNON_ANIM_READY);
-
-            if (wasAtCannon && !playerAtCannon)
-            {
-                cannonTicksRemaining = 0;
-            }
-            return;
-        }
-
         if (actor instanceof NPC)
         {
             NPC npc = (NPC) actor;
             TrackedMonster tracked = trackedMonsters.get(npc);
-            if (tracked == null) return;
+
+            if (tracked == null)
+            {
+                return;
+            }
 
             int animId = npc.getAnimation();
+
             if (animId != -1 && tracked.getType().isAttackAnimation(animId))
             {
                 tracked.setTicksUntilNextAttack(tracked.getType().getAttackSpeedTicks() + 1);
@@ -352,8 +362,6 @@ public class ShipCombatPlugin extends Plugin
 
     @Subscribe
     @SuppressWarnings("unused")
-<<<<<<< Updated upstream
-=======
     public void onMenuOptionClicked(MenuOptionClicked event)
     {
         String option = event.getMenuOption();
@@ -410,7 +418,6 @@ public class ShipCombatPlugin extends Plugin
 
     @Subscribe
     @SuppressWarnings("unused")
->>>>>>> Stashed changes
     public void onGameTick(GameTick ignored)
     {
         if (cannonTicksRemaining > 0)
@@ -418,36 +425,33 @@ public class ShipCombatPlugin extends Plugin
             cannonTicksRemaining--;
         }
 
-        List<GameObject> currentCannons = getTrackedCannons();
-        if (getBoatWorldEntity() != null && !currentCannons.isEmpty())
+        GameObject adjacentCannon = getCurrentPlayerCannon();
+
+        /*
+         * Operate was clicked and we've reached the cannon.
+         */
+        if (pendingCannonOperate && adjacentCannon != null)
         {
-            Player local = client.getLocalPlayer();
-            LocalPoint playerLp = local != null ? local.getLocalLocation() : null;
-            boolean nearCannon = false;
-            if (playerLp != null)
+            playerAtCannon = true;
+            playerCannon = adjacentCannon;
+            pendingCannonOperate = false;
+        }
+
+        /*
+         * Maintain the active cannon state.
+         */
+        if (playerAtCannon)
+        {
+            if (adjacentCannon == null)
             {
-                for (GameObject cannon : currentCannons)
-                {
-                    LocalPoint cannonLp = cannon.getLocalLocation();
-                    int dx = playerLp.getSceneX() - cannonLp.getSceneX();
-                    int dy = playerLp.getSceneY() - cannonLp.getSceneY();
-                    boolean cardinallyAdjacent = (Math.abs(dx) == 1 && dy == 0) || (dx == 0 && Math.abs(dy) == 1);
-                    if (cardinallyAdjacent)
-                    {
-                        nearCannon = true;
-                        break;
-                    }
-                }
-            }
-            if (!nearCannon && playerAtCannon)
-            {
+                playerAtCannon = false;
+                playerCannon = null;
                 cannonTicksRemaining = 0;
             }
-            playerAtCannon = nearCannon;
-        }
-        else
-        {
-            playerAtCannon = false;
+            else
+            {
+                playerCannon = adjacentCannon;
+            }
         }
 
         for (TrackedMonster tracked : trackedMonsters.values())

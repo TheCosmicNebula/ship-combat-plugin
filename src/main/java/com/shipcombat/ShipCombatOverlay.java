@@ -7,16 +7,13 @@ import java.awt.Graphics2D;
 import java.awt.Polygon;
 import java.awt.RenderingHints;
 import java.awt.Stroke;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javax.inject.Inject;
-import net.runelite.api.Client;
-import net.runelite.api.GameObject;
-import net.runelite.api.NPC;
-import net.runelite.api.Perspective;
-import net.runelite.api.Player;
-import net.runelite.api.Point;
-import net.runelite.api.WorldEntity;
-import net.runelite.api.WorldEntityConfig;
+
+import com.google.common.base.Strings;
+import net.runelite.api.*;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldArea;
 import net.runelite.api.coords.WorldPoint;
@@ -24,6 +21,7 @@ import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.OverlayUtil;
+import net.runelite.client.util.ColorUtil;
 
 public class ShipCombatOverlay extends Overlay
 {
@@ -59,12 +57,6 @@ public class ShipCombatOverlay extends Overlay
         if (we != null)
         {
             if (config.showShipTiles()) renderShipTiles(graphics, we);
-<<<<<<< Updated upstream
-            if (config.showCannonRange() && !plugin.getTrackedCannons().isEmpty()
-                    && (!config.onlyShowArcWhenManning() || plugin.isPlayerAtCannon()))
-            {
-                for (GameObject cannon : plugin.getTrackedCannons()) renderCannonArc(graphics, cannon);
-=======
             if (config.showCannonRange())
             {
                 if (config.onlyShowArcWhenManning())
@@ -80,8 +72,8 @@ public class ShipCombatOverlay extends Overlay
                 {
                     renderCannonArcs(graphics, plugin.getTrackedCannons());
                 }
->>>>>>> Stashed changes
             }
+
             if (config.showCannonTick() && plugin.getCannonTicksRemaining() > 0) renderCannonTickOverhead(graphics, local);
         }
 
@@ -120,31 +112,103 @@ public class ShipCombatOverlay extends Overlay
         }
     }
 
-    private void renderCannonArc(Graphics2D graphics, GameObject cannon)
+    private void renderCannonArcs(Graphics2D graphics, List<GameObject> cannons)
     {
-        LocalPoint lp = cannon.getLocalLocation();
-        int offX = lp.getX() - getShipCenterX(cannon.getWorldView());
-        int r = config.cannonRangeTiles(), h = 64, ts = 128;
-        graphics.setColor(config.cannonRangeFillColor());
-
-        for (int mx = -r; mx <= r; mx++)
+        if (cannons == null || cannons.isEmpty())
         {
-            for (int my = -r; my <= r; my++)
+            return;
+        }
+
+        /*
+         * Key = unique local tile coordinate.
+         *
+         * Value tells us:
+         * - where the tile is
+         * - which WorldView it belongs to
+         * - which cannon(s) cover it
+         */
+        Map<Long, CannonArcTile> tiles = new HashMap<>();
+
+        int range = config.cannonRangeTiles();
+        int tileSize = 128;
+
+        /*
+         * PASS 1:
+         * Work out coverage without drawing anything.
+         */
+        for (int cannonIndex = 0; cannonIndex < cannons.size(); cannonIndex++)
+        {
+            GameObject cannon = cannons.get(cannonIndex);
+
+            if (cannon == null)
             {
-                if (mx * mx + my * my > r * r || (offX >= 0 && mx < 0) || (offX < 0 && mx > 0)) continue;
-                float[] xs = {mx*ts-h, mx*ts+h, mx*ts+h, mx*ts-h}, ys = {my*ts-h, my*ts-h, my*ts+h, my*ts+h};
-                Polygon poly = modelToCanvasPoly(lp, 0, xs, ys, cannon.getWorldView());
-                if (poly != null) {
-                    graphics.fillPolygon(poly);
-                    graphics.setStroke(STROKE_THIN);
-                    graphics.setColor(config.cannonRangeColor());
-                    graphics.drawPolygon(poly);
-                    graphics.setColor(config.cannonRangeFillColor());
+                continue;
+            }
+
+            LocalPoint cannonLp = cannon.getLocalLocation();
+            if (cannonLp == null)
+            {
+                continue;
+            }
+
+            WorldView worldView = cannon.getWorldView();
+
+            /*
+             * Bit 0 = cannon 1
+             * Bit 1 = cannon 2
+             * etc.
+             */
+            int cannonBit = 1 << cannonIndex;
+
+            int shipCenterX = getShipCenterX(worldView);
+            int offX = cannonLp.getX() - shipCenterX;
+
+            for (int mx = -range; mx <= range; mx++)
+            {
+                for (int my = -range; my <= range; my++)
+                {
+                    // Outside circular cannon range
+                    if (mx * mx + my * my > range * range)
+                    {
+                        continue;
+                    }
+
+                    /*
+                     * Preserve your existing port/starboard arc restriction.
+                     */
+                    if ((offX >= 0 && mx < 0) || (offX < 0 && mx > 0))
+                    {
+                        continue;
+                    }
+
+                    int tileX = cannonLp.getX() + (mx * tileSize);
+                    int tileY = cannonLp.getY() + (my * tileSize);
+
+                    /*
+                     * One key for one physical tile.
+                     */
+                    long key = (((long) tileX) << 32) ^ (tileY & 0xffffffffL);
+                    CannonArcTile tile = tiles.get(key);
+
+                    if (tile == null)
+                    {
+                        LocalPoint center = new LocalPoint(tileX, tileY);
+                        tile = new CannonArcTile( center, worldView, cannonBit);
+                        tiles.put(key, tile);
+                    }
+                    else
+                    {
+                        /*
+                         * Already covered by another cannon.
+                         *
+                         * Don't draw it again -- just record that this
+                         * cannon also covers the tile.
+                         */
+                        tile.cannonMask |= cannonBit;
+                    }
                 }
             }
         }
-<<<<<<< Updated upstream
-=======
 
         /*
          * PASS 2:
@@ -214,7 +278,6 @@ public class ShipCombatOverlay extends Overlay
         graphics.setStroke(STROKE_THIN);
         graphics.setColor(lineColor);
         graphics.drawPolygon(poly);
->>>>>>> Stashed changes
     }
 
     private int getThreatLevel(WorldEntity boat, NPC npc, int attackRange)
@@ -315,8 +378,30 @@ public class ShipCombatOverlay extends Overlay
         graphics.setFont(FONT_TICK);
         Point pt = local.getCanvasTextLocation(graphics, text, local.getLogicalHeight() + TEXT_Z_OFFSET);
         if (pt == null) return;
-        OverlayUtil.renderTextLocation(graphics, new Point(pt.getX() + 1, pt.getY() + 1), text, config.cannonCooldownLightMode() ? Color.WHITE : Color.BLACK);
-        OverlayUtil.renderTextLocation(graphics, pt, text, config.cannonCooldownColor());
+
+        Color color = config.cannonCooldownLightMode() ? Color.WHITE : Color.BLACK;
+
+        renderTextLocation(graphics, new Point(pt.getX() + 1, pt.getY() + 1), text, color, color);
+        renderTextLocation(graphics, pt, text, config.cannonCooldownColor(), color);
+    }
+
+    public static void renderTextLocation(Graphics2D graphics, Point txtLoc, String text, Color color, Color backingColor)
+    {
+        if (Strings.isNullOrEmpty(text))
+        {
+            return;
+        }
+
+        int x = txtLoc.getX();
+        int y = txtLoc.getY();
+
+        if (color != backingColor) {
+            graphics.setColor(backingColor);
+            graphics.drawString(text, x + 1, y + 1);
+        }
+
+        graphics.setColor(ColorUtil.colorWithAlpha(color, 0xFF));
+        graphics.drawString(text, x, y);
     }
 
     private void renderMonsterRangeBoundary(Graphics2D graphics, WorldArea area, int range, Color color) {

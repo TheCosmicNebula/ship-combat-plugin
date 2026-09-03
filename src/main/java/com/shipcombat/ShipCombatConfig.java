@@ -23,6 +23,9 @@ public interface ShipCombatConfig extends Config
     @ConfigSection(name = "Corpse Timer",   description = "Countdown until sea monster corpses despawn",     position = 3)
     String sectionCorpse = "corpse";
 
+    /*@ConfigSection(name = "Overlay", description = "Cannonball options", position = 4)
+    String sectionOverlay = "overlay";*/
+
     // ---- Cannon range arc -----------------------------------------------
 
     @ConfigItem(keyName = "showCannonRange", name = "Show cannon firing arc",
@@ -42,23 +45,6 @@ public interface ShipCombatConfig extends Config
     default int cannonRangeTiles() { return 13; }
 
     @Alpha
-<<<<<<< Updated upstream
-    @ConfigItem(keyName = "cannonRangeFillColor", name = "Arc fill color",
-            description = "Color of the interior of the firing arc.",
-            section = sectionCannon, position = 2)
-    default Color cannonRangeFillColor() { return new Color(255, 140, 0, 40); }
-
-    @Alpha
-    @ConfigItem(keyName = "cannonRangeColor", name = "Arc border color",
-            description = "Color of the arc's outer edge.",
-            section = sectionCannon, position = 3)
-    default Color cannonRangeColor() { return new Color(255, 140, 0, 200); }
-
-    @ConfigItem(keyName = "onlyShowArcWhenManning", name = "Only show arc when manning",
-            description = "Hide the firing arc unless you are standing at the cannon facility.",
-            section = sectionCannon, position = 4)
-    default boolean onlyShowArcWhenManning() { return false; }
-=======
     @ConfigItem(keyName = "cannonOneColor", name = "Cannon one color",
             description = "Color used for tiles covered only by cannon one.",
             section = sectionCannon, position = 3)
@@ -75,27 +61,18 @@ public interface ShipCombatConfig extends Config
             description = "Color used where multiple cannon firing arcs overlap.",
             section = sectionCannon, position = 5)
     default Color cannonOverlapColor() { return new Color(255, 0, 0, 40); }
->>>>>>> Stashed changes
 
     // ---- Cannon tick counter --------------------------------------------
 
     @ConfigItem(keyName = "showCannonTick", name = "Show cannon tick counter",
             description = "Show the number of ticks remaining until the cannon can fire again, above your character.",
-<<<<<<< Updated upstream
-            section = sectionCannon, position = 5)
-=======
             section = sectionCannon, position = 6)
->>>>>>> Stashed changes
     default boolean showCannonTick() { return true; }
 
     @Alpha
     @ConfigItem(keyName = "cannonCooldownColor", name = "Tick counter color",
             description = "Color of the cooldown text shown above your character.",
-<<<<<<< Updated upstream
-            section = sectionCannon, position = 6)
-=======
             section = sectionCannon, position = 7)
->>>>>>> Stashed changes
     default Color cannonCooldownColor() { return new Color(255, 80, 0); }
 
     @ConfigItem(keyName = "cannonCooldownLightMode", name = "Tick counter light mode",
@@ -185,5 +162,11 @@ public interface ShipCombatConfig extends Config
             description = "Color of the despawn countdown text.",
             section = sectionCorpse, position = 2)
     default Color corpseTimerColor() { return new Color(255, 255, 255, 255); }
+
+
+    /*@ConfigItem(keyName = "showCannonballOverlay", name = "Show cannonball overlay",
+            description = "Toggle between showing cannonballs or not.",
+            section = sectionOverlay, position = 1)
+    default boolean showCannonballOverlay() { return true; }*/
 
 }
